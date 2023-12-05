@@ -1,0 +1,6 @@
+# mnemonic, format, opcode
+ADD, 3, 18
+ADDR, 2, 90
+AND, 3, 40
+CLEAR, 2, B4
+# TODO: Add all the instructions

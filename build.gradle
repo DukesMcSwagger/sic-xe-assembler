@@ -1,0 +1,51 @@
+plugins {
+    id 'application'
+    id "com.diffplug.spotless" version "6.23.3"
+}
+
+group = 'csci30000'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+def mainClassName = 'sicxeassembler.Main'
+
+application {
+    mainClass = mainClassName
+}
+
+jar {
+    manifest {
+        attributes (
+                'Main-Class': mainClassName
+                )
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+spotless {
+    enforceCheck = false
+    java {
+        toggleOffOn()
+        googleJavaFormat()
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    groovyGradle {
+        greclipse()
+        indentWithSpaces(4)
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
