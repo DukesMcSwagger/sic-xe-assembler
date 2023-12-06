@@ -5,6 +5,7 @@ import static sicxeassembler.Operation.op;
 
 import java.text.ParseException;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +38,7 @@ class AssemblyParserTest {
     assertEquals(new SourceLine.Comment(""), parser.parse(". "));
     assertEquals(new SourceLine.Comment(""), parser.parse(" . "));
     assertParseFailure(".comment");
-    assertParseFailure("LABEL ADD .comment");
+    assertParseFailure("LABEL ADD.comment");
   }
 
   @Test
@@ -79,11 +80,12 @@ class AssemblyParserTest {
   }
 
   private void assertParseFailure(String source) {
+    AtomicReference<SourceLine> parsedAs = new AtomicReference<>();
     assertThrows(
         ParseException.class,
         () -> {
-          parser.parse(source);
+          parsedAs.set(parser.parse(source));
         },
-        () -> "'" + source + "' parsed without error");
+        () -> "'" + source + "' parsed without error.\nParsed as: " + parsedAs.get().toString());
   }
 }
