@@ -95,8 +95,4 @@ public class OpTable {
     }
     return new OpTable(map);
   }
-
-  public static OpTable loadFromFile() {
-    return null;
-  }
 }
