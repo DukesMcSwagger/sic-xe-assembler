@@ -6,7 +6,7 @@ import static sicxeassembler.Operation.op;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class TestOpTable {
+class OpTableTest {
   OpTable makeTestTable() {
     return new OpTable(
         List.of(

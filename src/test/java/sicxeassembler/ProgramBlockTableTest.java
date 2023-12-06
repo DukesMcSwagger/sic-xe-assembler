@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-public class TestProgramBlockTable {
+class ProgramBlockTableTest {
   final String kTestBlock = "test";
 
   @Test
