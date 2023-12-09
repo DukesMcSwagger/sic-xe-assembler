@@ -25,7 +25,7 @@ class OpTableTest {
   @Test
   void testGet() {
     var table = makeTestTable();
-    var result = table.get("OP2");
+    var result = table.getOptional("OP2");
     assertTrue(result.isPresent());
     assertEquals(op("OP2", 2, Operation.Format.TWO), result.get());
   }

@@ -27,7 +27,7 @@ public sealed interface SourceLine {
    *
    * @param label The label for the instruction. may be empty.
    * @param extFlag Whether the extended format flag was set.
-   * @param mnemonic the instruction mnemonic
+   * @param op the instruction operation
    * @param argFlag The operand flag, if set. may be empty.
    * @param argOne The first operand. May be empty.
    * @param argTwo The second operand. May be empty.
@@ -36,7 +36,7 @@ public sealed interface SourceLine {
   record Instruction(
       String label,
       boolean extFlag,
-      String mnemonic,
+      Operation op,
       String argFlag,
       String argOne,
       String argTwo,

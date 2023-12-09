@@ -104,13 +104,14 @@ public class AssemblyParser {
     // Handle final errors and return
     // This could be moved to pass one if desired
     if (opTable.contains(mnemonic)) {
+      var op = opTable.get(mnemonic);
       // extended format only allowed on 3/4 instructions
-      if (extFlag && !opTable.get(mnemonic).get().format().equals(Operation.Format.THREE_FOUR)) {
+      if (extFlag && !op.format().equals(Operation.Format.THREE_FOUR)) {
         throw new ParseException(
             "Extended format not allowed on instruction '" + mnemonic + "'",
             source.indexOf(mnemonic) - 1);
       }
-      return new SourceLine.Instruction(label, extFlag, mnemonic, argFlag, argOne, argTwo, comment);
+      return new SourceLine.Instruction(label, extFlag, op, argFlag, argOne, argTwo, comment);
     } else if (directives.contains(mnemonic)) {
       if (!argTwo.isEmpty()) {
         throw new ParseException(
@@ -131,8 +132,7 @@ public class AssemblyParser {
       }
       return new SourceLine.Directive(label, mnemonic, argOne, comment);
     } else {
-      throw new ParseException(
-          "Invalid mnemonic or directive: '" + mnemonic + "'", source.indexOf(mnemonic));
+      throw new ParseException("Invalid symbol: '" + mnemonic + "'", source.indexOf(mnemonic));
     }
   }
 }

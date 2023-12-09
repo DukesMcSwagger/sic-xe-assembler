@@ -36,8 +36,12 @@ public class OpTable {
    * @return If the mnemonic is valid, an optional containing the Operation; otherwise an empty
    *     optional.
    */
-  public Optional<Operation> get(String mnemonic) {
+  public Optional<Operation> getOptional(String mnemonic) {
     return Optional.ofNullable(getMap().get(mnemonic));
+  }
+
+  public Operation get(String mnemonic) {
+    return getMap().get(mnemonic);
   }
 
   /**

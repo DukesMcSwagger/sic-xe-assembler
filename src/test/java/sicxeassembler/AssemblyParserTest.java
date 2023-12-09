@@ -11,10 +11,11 @@ import org.junit.jupiter.api.Test;
 
 class AssemblyParserTest {
   AssemblyParser parser;
+  OpTable opTable;
 
   @BeforeEach
   void createParser() {
-    OpTable opTable =
+    opTable =
         new OpTable(
             Set.of(
                 op("ADD", 0x18, Operation.Format.THREE_FOUR),
@@ -44,16 +45,17 @@ class AssemblyParserTest {
   @Test
   void testInstruction() throws ParseException {
     assertEquals(
-        new SourceLine.Instruction("LABEL", false, "ADD", "", "OP1", "", ""),
+        new SourceLine.Instruction("LABEL", false, opTable.get("ADD"), "", "OP1", "", ""),
         parser.parse("LABEL ADD OP1"));
     assertEquals(
-        new SourceLine.Instruction("", false, "CLEAR", "", "A", "", "comment"),
+        new SourceLine.Instruction("", false, opTable.get("CLEAR"), "", "A", "", "comment"),
         parser.parse(" CLEAR A . comment"));
     assertEquals(
-        new SourceLine.Instruction("LABEL", true, "ADD", "", "OTHER", "", "comment"),
+        new SourceLine.Instruction("LABEL", true, opTable.get("ADD"), "", "OTHER", "", "comment"),
         parser.parse("LABEL +ADD OTHER .     comment"));
     assertEquals(
-        new SourceLine.Instruction("LABEL", true, "ADD", "", "OTHER", "THING", "comment"),
+        new SourceLine.Instruction(
+            "LABEL", true, opTable.get("ADD"), "", "OTHER", "THING", "comment"),
         parser.parse("LABEL +ADD OTHER,THING . comment"));
 
     assertParseFailure("garbage garbage");
