@@ -3,8 +3,11 @@ package sicxeassembler;
 import java.util.*;
 
 public class ProgramBlockTable {
-  /** Maps program block name with current location counter */
-  private final Map<String, Integer> blocks = new LinkedHashMap<>();
+  /** Maps program block name to block ID */
+  private final Map<String, Integer> blockIds = new LinkedHashMap<>();
+
+  /** List of block counters- index is block ID */
+  private final List<Integer> blocks = new ArrayList<>();
 
   /**
    * Adds count to the counter for the given block, and returns the previously stored value. If the
@@ -17,8 +20,23 @@ public class ProgramBlockTable {
   int getAndAdd(String block, int count) {
     // If the program block doesn't exist yet, start at 0
     int current = get(block);
-    blocks.put(block, current + count);
+    set(block, current + count);
     return current;
+  }
+
+  /**
+   * Gets the block id. If the block is not in the table, the block is added.
+   *
+   * @param name The block name
+   * @return The block number.
+   */
+  int getBlockId(String name) {
+    return blockIds.computeIfAbsent(
+        name,
+        (unused) -> {
+          blocks.add(0);
+          return blocks.size() - 1;
+        });
   }
 
   /**
@@ -29,33 +47,35 @@ public class ProgramBlockTable {
    * @return Current value of the counter for the given program block.
    */
   int get(String block) {
-    return blocks.getOrDefault(block, 0);
+    return blocks.get(getBlockId(block));
   }
 
-  Set<String> getTables() {
-    return Collections.unmodifiableSet(blocks.keySet());
+  void set(String block, int value) {
+    blocks.set(getBlockId(block), value);
   }
 
   /**
-   * Returns the backing map
+   * Returns the backing map of block names to block IDs
    *
    * @return the map
    */
   Map<String, Integer> getMap() {
-    return blocks;
+    return blockIds;
   }
 
   /**
    * Calculates the starting location of each program block and returns the results as a Map
    *
-   * @return Map of program block names to starting locations
+   * @return List of starting locations of each block
    */
-  Map<String, Integer> makeAbsolutePositions() {
+  List<Integer> makeAbsolutePositions() {
     int counter = 0;
-    var temp = new HashMap<String, Integer>();
-    for (var entry : blocks.keySet()) {
-      temp.put(entry, counter);
-      counter += blocks.get(entry);
+    var temp = new ArrayList<Integer>();
+    for (var entry : blocks) {
+      // Block starts at current location
+      temp.add(counter);
+      // Add length of block
+      counter += entry;
     }
     return temp;
   }

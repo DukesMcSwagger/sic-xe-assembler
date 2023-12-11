@@ -1,11 +1,13 @@
 package sicxeassembler;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 public class PassOne {
   private List<SourceLine> lines;
+  private final List<PassOneData> output = new LinkedList<>();
   private final ProgramBlockTable programBlocks = new ProgramBlockTable();
   private final Map<String, SymbolData> symbolTable = new HashMap<>();
 
@@ -23,8 +25,12 @@ public class PassOne {
     this.lines = lines;
   }
 
-  public String getActiveBlock() {
+  public String getActiveBlockName() {
     return activeBlock;
+  }
+
+  public int getActiveBlockId() {
+    return getProgramBlocks().getBlockId(getActiveBlockName());
   }
 
   private void setActiveBlock(String activeBlock) {
@@ -93,18 +99,20 @@ public class PassOne {
   }
 
   private void handleInstruction(SourceLine.Instruction instruction) {
-    int length =
+    int size =
         switch (instruction.op().format()) {
           case ONE -> 1;
           case TWO -> 2;
           case THREE_FOUR -> instruction.extFlag() ? 4 : 3;
         };
-    int location = programBlocks.getAndAdd(getActiveBlock(), length);
-    tryAddSymbol(instruction.label(), location);
+    int location = programBlocks.getAndAdd(getActiveBlockName(), size);
+    appendOutputData(new PassOneData(instruction, size, getActiveBlockId(), location));
   }
 
   private void handleUSE(SourceLine.Directive directive) {
     setActiveBlock(directive.argOne());
+    appendOutputData(
+        new PassOneData(directive, 0, getActiveBlockId(), programBlocks.get(getActiveBlockName())));
   }
 
   private void handleRESW(SourceLine.Directive directive) {
@@ -115,31 +123,45 @@ public class PassOne {
     if (count < 0) {
       throw new AssemblerException("Size argument for RESW directive cannot be negative");
     }
-    int location = programBlocks.getAndAdd(getActiveBlock(), count * WORD_SIZE);
-    tryAddSymbol(directive.label(), location);
+    int size = count * WORD_SIZE;
+    int location = programBlocks.getAndAdd(getActiveBlockName(), size);
+    appendOutputData(new PassOneData(directive, size, getActiveBlockId(), location));
   }
 
   private void handleRESB(SourceLine.Directive directive) {
     if (directive.argOne().isEmpty()) {
       throw new AssemblerException("Size argument missing for RESB directive");
     }
-    int count = Integer.parseInt(directive.argOne());
-    if (count < 0) {
+    int size = Integer.parseInt(directive.argOne()) * BYTE_SIZE;
+    if (size < 0) {
       throw new AssemblerException("Size argument for RESB directive cannot be negative");
     }
-    int location = programBlocks.getAndAdd(getActiveBlock(), count * BYTE_SIZE);
-    tryAddSymbol(directive.label(), location);
+    int location = programBlocks.getAndAdd(getActiveBlockName(), size);
+    appendOutputData(new PassOneData(directive, size, getActiveBlockId(), location));
   }
 
   private void handleWORD(SourceLine.Directive directive) {
-    int location = programBlocks.getAndAdd(getActiveBlock(), WORD_SIZE);
-    tryAddSymbol(directive.label(), location);
+    int location = programBlocks.getAndAdd(getActiveBlockName(), WORD_SIZE);
+    appendOutputData(new PassOneData(directive, WORD_SIZE, getActiveBlockId(), location));
   }
 
   private void handleBYTE(SourceLine.Directive directive) {
-    var length = ConstantParser.parseByteConstant(directive.argOne()).length;
-    int location = programBlocks.getAndAdd(getActiveBlock(), length * BYTE_SIZE);
-    tryAddSymbol(directive.label(), location);
+    var size = ConstantParser.parseByteConstant(directive.argOne()).length * BYTE_SIZE;
+    int location = programBlocks.getAndAdd(getActiveBlockName(), size);
+    appendOutputData(new PassOneData(directive, size, getActiveBlockId(), location));
+  }
+
+  /**
+   * Adds the data from the output. If the data has an associated symbol, adds the label to the
+   * symbol table via {@link #tryAddSymbol(String, int, int)}
+   */
+  private void appendOutputData(PassOneData data) {
+    output.add(data);
+    if (data.line() instanceof SourceLine.Directive directive) {
+      tryAddSymbol(directive.label(), data.block(), data.addressInBlock());
+    } else if (data.line() instanceof SourceLine.Instruction instruction) {
+      tryAddSymbol(instruction.label(), data.block(), data.addressInBlock());
+    }
   }
 
   /**
@@ -149,12 +171,12 @@ public class PassOne {
    * @param label The label to add
    * @param location The location of the symbol in the current program block
    */
-  private void tryAddSymbol(String label, int location) {
+  private void tryAddSymbol(String label, int blockID, int location) {
     if (!label.isEmpty()) {
       if (symbolTable.containsKey(label)) {
         throw new AssemblerException("Multiple definitions of symbol: " + label);
       }
-      symbolTable.put(label, new SymbolData(location, getActiveBlock()));
+      symbolTable.put(label, new SymbolData(location, blockID));
     }
   }
 

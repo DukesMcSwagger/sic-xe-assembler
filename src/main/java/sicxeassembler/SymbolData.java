@@ -1,3 +1,3 @@
 package sicxeassembler;
 
-public record SymbolData(int location, String programBlock) {}
+public record SymbolData(int location, int programBlockId) {}
