@@ -1,12 +1,10 @@
 package sicxeassembler;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 
 public class ProgramBlockTable {
   /** Maps program block name with current location counter */
-  HashMap<String, Integer> blocks = new HashMap<>();
+  private final Map<String, Integer> blocks = new LinkedHashMap<>();
 
   /**
    * Adds count to the counter for the given block, and returns the previously stored value. If the
@@ -36,5 +34,29 @@ public class ProgramBlockTable {
 
   Set<String> getTables() {
     return Collections.unmodifiableSet(blocks.keySet());
+  }
+
+  /**
+   * Returns the backing map
+   *
+   * @return the map
+   */
+  Map<String, Integer> getMap() {
+    return blocks;
+  }
+
+  /**
+   * Calculates the starting location of each program block and returns the results as a Map
+   *
+   * @return Map of program block names to starting locations
+   */
+  Map<String, Integer> makeAbsolutePositions() {
+    int counter = 0;
+    var temp = new HashMap<String, Integer>();
+    for (var entry : blocks.keySet()) {
+      temp.put(entry, counter);
+      counter += blocks.get(entry);
+    }
+    return temp;
   }
 }
