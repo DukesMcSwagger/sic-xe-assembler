@@ -1,92 +1,56 @@
 package sicxeassembler;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static sicxeassembler.Operation.op;
 
 import java.text.ParseException;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class AssemblyParserTest {
-  AssemblyParser parser;
-  OpTable opTable;
 
-  @BeforeEach
-  void createParser() {
-    opTable =
-        new OpTable(
-            Set.of(
-                op("ADD", 0x18, Operation.Format.THREE_FOUR),
-                op("SUB", 0x1C, Operation.Format.THREE_FOUR),
-                op("CLEAR", 0xB4, Operation.Format.TWO)));
-    Set<String> directives = Set.of("USE");
-    parser = new AssemblyParser(opTable, directives);
-  }
 
   @Test
   void testEmptyString() throws ParseException {
-    assertEquals(new SourceLine.Empty(), parser.parse(""));
-    assertEquals(new SourceLine.Empty(), parser.parse("      \t   "));
+    assertEquals(new SourceLine2(), SourceLine2.parseLine(""));
+    assertEquals(new SourceLine2(), SourceLine2.parseLine("      \t   "));
   }
 
   @Test
   void testCommentOnly() throws ParseException {
-    assertEquals(new SourceLine.Comment("comment"), parser.parse("   .   comment"));
-    assertEquals(new SourceLine.Comment("comment"), parser.parse(". comment"));
-    assertEquals(new SourceLine.Comment(""), parser.parse(" ."));
-    assertEquals(new SourceLine.Comment(""), parser.parse(". "));
-    assertEquals(new SourceLine.Comment(""), parser.parse(" . "));
-    assertParseFailure(".comment");
-    assertParseFailure("LABEL ADD.comment");
+    assertEquals(new SourceLine2().setComment("comment"), SourceLine2.parseLine("   .   comment"));
+    assertEquals(new SourceLine2().setComment("comment"), SourceLine2.parseLine(". comment"));
+    assertEquals(new SourceLine2().setComment("comment"), SourceLine2.parseLine(".comment"));
+    assertEquals(new SourceLine2().setComment(""), SourceLine2.parseLine(" ."));
+    assertEquals(new SourceLine2().setComment(""), SourceLine2.parseLine(". "));
   }
 
   @Test
   void testInstruction() throws ParseException {
     assertEquals(
-        new SourceLine.Instruction("LABEL", false, opTable.get("ADD"), "", "OP1", "", ""),
-        parser.parse("LABEL ADD OP1"));
+        new SourceLine2().setLabel("LABEL").setOpCode("ADD").setArgOne("OP1"),
+        SourceLine2.parseLine("LABEL ADD OP1"));
+    assertEquals(new SourceLine2().setOpCode("CLEAR").setArgOne("A").setComment("comment"),
+        SourceLine2.parseLine(" CLEAR A . comment"));
     assertEquals(
-        new SourceLine.Instruction("", false, opTable.get("CLEAR"), "", "A", "", "comment"),
-        parser.parse(" CLEAR A . comment"));
+        new SourceLine2().setLabel("LABEL").setOpCode("+ADD").setArgOne("OTHER").setComment("comment"),
+        SourceLine2.parseLine("LABEL +ADD OTHER .     comment"));
     assertEquals(
-        new SourceLine.Instruction("LABEL", true, opTable.get("ADD"), "", "OTHER", "", "comment"),
-        parser.parse("LABEL +ADD OTHER .     comment"));
-    assertEquals(
-        new SourceLine.Instruction(
-            "LABEL", true, opTable.get("ADD"), "", "OTHER", "THING", "comment"),
-        parser.parse("LABEL +ADD OTHER,THING . comment"));
-
-    assertParseFailure("garbage garbage");
-    assertParseFailure("LABEL GARBO");
-    assertParseFailure("LABEL +CLEAR A");
-  }
-
-  @Test
-  void testDirective() throws ParseException {
-    assertEquals(new SourceLine.Directive("", "USE", "CDATA", ""), parser.parse(" USE CDATA . "));
-    assertEquals(
-        new SourceLine.Directive("LABEL", "USE", "ARG1", ""), parser.parse("LABEL USE ARG1"));
-
-    assertParseFailure(" USE ARG1,ARG2");
-    assertParseFailure(" +USE");
-    assertParseFailure(" USE @ARG");
+        new SourceLine2().setLabel("LABEL").setOpCode("+ADD").setArgOne("OTHER").setArgTwo("THING").setComment("comment"),
+        SourceLine2.parseLine("LABEL +ADD OTHER,THING . comment"));
   }
 
   @Test
   void testBadParses() throws ParseException {
-    assertParseFailure(" ,");
-    assertParseFailure(" NOTANOP");
     assertParseFailure("LABEL ADD ,ARG2");
   }
 
   private void assertParseFailure(String source) {
-    AtomicReference<SourceLine> parsedAs = new AtomicReference<>();
+    AtomicReference<SourceLine2> parsedAs = new AtomicReference<>();
     assertThrows(
         ParseException.class,
         () -> {
-          parsedAs.set(parser.parse(source));
+          parsedAs.set(SourceLine2.parseLine(source));
         },
         () -> "'" + source + "' parsed without error.\nParsed as: " + parsedAs.get().toString());
   }
