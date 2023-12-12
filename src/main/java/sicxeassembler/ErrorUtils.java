@@ -27,4 +27,16 @@ public class ErrorUtils {
             + "^";
     System.err.println(output);
   }
+
+  public static void error(String fileName, AssemblerException error) {
+    String output =
+        fileName
+            + ":"
+            + error.getLineNumber()
+            + ":error: "
+            + error.getMessage()
+            + "\n"
+            + error.getCauseLine();
+    System.err.println(output);
+  }
 }

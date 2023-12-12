@@ -4,40 +4,60 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.text.ParseException;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class AssemblyParserTest {
 
-
   @Test
   void testEmptyString() throws ParseException {
-    assertEquals(new SourceLine2(), SourceLine2.parseLine(""));
-    assertEquals(new SourceLine2(), SourceLine2.parseLine("      \t   "));
+    assertEquals(new SourceLine(), SourceLine.parseLine(""));
+    assertEquals(new SourceLine(), SourceLine.parseLine("      \t   "));
   }
 
   @Test
   void testCommentOnly() throws ParseException {
-    assertEquals(new SourceLine2().setComment("comment"), SourceLine2.parseLine("   .   comment"));
-    assertEquals(new SourceLine2().setComment("comment"), SourceLine2.parseLine(". comment"));
-    assertEquals(new SourceLine2().setComment("comment"), SourceLine2.parseLine(".comment"));
-    assertEquals(new SourceLine2().setComment(""), SourceLine2.parseLine(" ."));
-    assertEquals(new SourceLine2().setComment(""), SourceLine2.parseLine(". "));
+    assertEquals(new SourceLine().setComment("comment"), SourceLine.parseLine("   .   comment"));
+    assertEquals(new SourceLine().setComment("comment"), SourceLine.parseLine(". comment"));
+    assertEquals(new SourceLine().setComment("comment"), SourceLine.parseLine(".comment"));
+    assertEquals(new SourceLine().setComment(""), SourceLine.parseLine(" ."));
+    assertEquals(new SourceLine().setComment(""), SourceLine.parseLine(". "));
   }
 
   @Test
   void testInstruction() throws ParseException {
     assertEquals(
-        new SourceLine2().setLabel("LABEL").setOpCode("ADD").setArgOne("OP1"),
-        SourceLine2.parseLine("LABEL ADD OP1"));
-    assertEquals(new SourceLine2().setOpCode("CLEAR").setArgOne("A").setComment("comment"),
-        SourceLine2.parseLine(" CLEAR A . comment"));
+        new SourceLine().setLabel("LABEL").setOpCode("ADD").setArgOne("OP1"),
+        SourceLine.parseLine("LABEL ADD OP1"));
     assertEquals(
-        new SourceLine2().setLabel("LABEL").setOpCode("+ADD").setArgOne("OTHER").setComment("comment"),
-        SourceLine2.parseLine("LABEL +ADD OTHER .     comment"));
+        new SourceLine().setOpCode("CLEAR").setArgOne("A").setComment("comment"),
+        SourceLine.parseLine(" CLEAR A . comment"));
     assertEquals(
-        new SourceLine2().setLabel("LABEL").setOpCode("+ADD").setArgOne("OTHER").setArgTwo("THING").setComment("comment"),
-        SourceLine2.parseLine("LABEL +ADD OTHER,THING . comment"));
+        new SourceLine()
+            .setLabel("LABEL")
+            .setOpCodePrefix("+")
+            .setOpCode("ADD")
+            .setArgOne("OTHER")
+            .setComment("comment"),
+        SourceLine.parseLine("LABEL +ADD OTHER .     comment"));
+    assertEquals(
+        new SourceLine()
+            .setLabel("LABEL")
+            .setOpCodePrefix("+")
+            .setOpCode("ADD")
+            .setArgOne("OTHER")
+            .setArgTwo("THING")
+            .setComment("comment"),
+        SourceLine.parseLine("LABEL +ADD OTHER,THING . comment"));
+    assertEquals(
+        new SourceLine().setOpCode("ADD").setArgOnePrefix("@").setArgOne("THING"),
+        SourceLine.parseLine(" ADD @THING"));
+    assertEquals(
+        new SourceLine()
+            .setOpCode("ADD")
+            .setArgOnePrefix("@")
+            .setArgOne("THING")
+            .setArgTwo("OTHER"),
+        SourceLine.parseLine(" ADD @THING,OTHER"));
   }
 
   @Test
@@ -46,11 +66,11 @@ class AssemblyParserTest {
   }
 
   private void assertParseFailure(String source) {
-    AtomicReference<SourceLine2> parsedAs = new AtomicReference<>();
+    AtomicReference<SourceLine> parsedAs = new AtomicReference<>();
     assertThrows(
         ParseException.class,
         () -> {
-          parsedAs.set(SourceLine2.parseLine(source));
+          parsedAs.set(SourceLine.parseLine(source));
         },
         () -> "'" + source + "' parsed without error.\nParsed as: " + parsedAs.get().toString());
   }

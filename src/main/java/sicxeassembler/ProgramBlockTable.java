@@ -1,13 +1,20 @@
 package sicxeassembler;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ProgramBlockTable {
+  private final Map<String, ProgramBlock> blocksNew = new LinkedHashMap<>();
+
   /** Maps program block name to block ID */
   private final Map<String, Integer> blockIds = new LinkedHashMap<>();
 
   /** List of block counters- index is block ID */
   private final List<Integer> blocks = new ArrayList<>();
+
+  public ProgramBlock getBlock(String blockName) {
+    return blocksNew.computeIfAbsent(blockName, (name) -> new ProgramBlock(blocksNew.size(), name));
+  }
 
   /**
    * Adds count to the counter for the given block, and returns the previously stored value. If the
@@ -17,11 +24,11 @@ public class ProgramBlockTable {
    * @param count Count to add to counter for the given program block
    * @return Counter value before adding count
    */
-  int getAndAdd(String block, int count) {
+  @Deprecated
+  int getAndAddCount(String block, int count) {
+    var blockO = getBlock(block);
     // If the program block doesn't exist yet, start at 0
-    int current = get(block);
-    set(block, current + count);
-    return current;
+    return blockO.getAndAdd(count);
   }
 
   /**
@@ -30,13 +37,9 @@ public class ProgramBlockTable {
    * @param name The block name
    * @return The block number.
    */
+  @Deprecated
   int getBlockId(String name) {
-    return blockIds.computeIfAbsent(
-        name,
-        (unused) -> {
-          blocks.add(0);
-          return blocks.size() - 1;
-        });
+    return getBlock(name).getId();
   }
 
   /**
@@ -46,21 +49,23 @@ public class ProgramBlockTable {
    * @param block the program block
    * @return Current value of the counter for the given program block.
    */
-  int get(String block) {
-    return blocks.get(getBlockId(block));
+  @Deprecated
+  int getCount(String block) {
+    return getBlock(block).get();
   }
 
   void set(String block, int value) {
-    blocks.set(getBlockId(block), value);
+    getBlock(block).set(value);
   }
 
   /**
-   * Returns the backing map of block names to block IDs
+   * Returns the backing map of block names to block counts
    *
    * @return the map
    */
   Map<String, Integer> getMap() {
-    return blockIds;
+    return blocksNew.entrySet().stream()
+        .collect(Collectors.toMap((entry) -> entry.getKey(), (entry) -> entry.getValue().get()));
   }
 
   /**
@@ -71,11 +76,11 @@ public class ProgramBlockTable {
   List<Integer> makeAbsolutePositions() {
     int counter = 0;
     var temp = new ArrayList<Integer>();
-    for (var entry : blocks) {
+    for (var entry : blocksNew.values()) {
       // Block starts at current location
       temp.add(counter);
       // Add length of block
-      counter += entry;
+      counter += entry.get();
     }
     return temp;
   }

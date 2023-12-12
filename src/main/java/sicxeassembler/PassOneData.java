@@ -8,4 +8,5 @@ package sicxeassembler;
  * @param block the block ID
  * @param addressInBlock the address relative to the start of the block
  */
-public record PassOneData(SourceLine line, int size, int block, int addressInBlock) {}
+public record PassOneData(
+    SourceLine line, int size, int block, int addressInBlock, boolean isExecutableInstruction) {}
