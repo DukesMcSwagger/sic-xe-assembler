@@ -25,6 +25,14 @@ public interface OutputGenerator {
    */
   void accept(PassTwoData output);
 
+  /**
+   * Indicate to the generator that a modification record needs to be generated
+   *
+   * @param address address to be modified
+   * @param size size in half bytes
+   */
+  void addModificationRecord(int address, int size);
+
   /** Finish and clean up. Called once after all code has been accepted. */
   void finalizeOutput();
 }

@@ -25,6 +25,15 @@ public class PassOne {
     this.opTable = opTable;
     this.lines = lines;
     activeBlock = programBlocks.getBlock("");
+    symbolTable.put("A", new SymbolData(0, 0, SymbolData.Type.ABSOLUTE));
+    symbolTable.put("X", new SymbolData(1, 0, SymbolData.Type.ABSOLUTE));
+    symbolTable.put("L", new SymbolData(2, 0, SymbolData.Type.ABSOLUTE));
+    symbolTable.put("PC", new SymbolData(8, 0, SymbolData.Type.ABSOLUTE));
+    symbolTable.put("SW", new SymbolData(9, 0, SymbolData.Type.ABSOLUTE));
+    symbolTable.put("B", new SymbolData(3, 0, SymbolData.Type.ABSOLUTE));
+    symbolTable.put("S", new SymbolData(4, 0, SymbolData.Type.ABSOLUTE));
+    symbolTable.put("T", new SymbolData(5, 0, SymbolData.Type.ABSOLUTE));
+    symbolTable.put("F", new SymbolData(6, 0, SymbolData.Type.ABSOLUTE));
   }
 
   public String getActiveBlockName() {
@@ -84,6 +93,7 @@ public class PassOne {
   private void initializeStartAddress() {
     if (currentLine.getOpCode().equals("START")) {
       setStartAddress(Integer.parseInt(currentLine.getArgOne(), 16));
+      appendOutputData(new PassOneData(currentLine, 0, 0, 0, false));
       getNextLine();
     } else {
       setStartAddress(0);
@@ -306,12 +316,16 @@ public class PassOne {
     return currentLine;
   }
 
-  public ProgramBlockTable getProgramBlocks() {
-    return programBlocks;
+  public List<Integer> getBlockAddresses() {
+    return programBlocks.makeAbsolutePositions();
   }
 
   public Map<String, SymbolData> getSymbolTable() {
     return symbolTable;
+  }
+
+  public Map<String, Literal> getLiteralTable() {
+    return literalTable;
   }
 
   public List<PassOneData> getOutput() {

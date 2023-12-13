@@ -4,15 +4,15 @@ public record PassTwoData(
     SourceLine line,
     int size,
     int block,
-    int addressInBlock,
+    int address,
     boolean isExecutableInstruction,
     int[] objectCode) {
-  public PassTwoData(PassOneData passOne, int[] objectCode) {
+  public PassTwoData(PassOneData passOne, int address, int[] objectCode) {
     this(
         passOne.line(),
         passOne.size(),
         passOne.block(),
-        passOne.addressInBlock(),
+        address,
         passOne.isExecutableInstruction(),
         objectCode);
   }
