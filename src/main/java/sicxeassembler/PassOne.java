@@ -125,7 +125,10 @@ public class PassOne {
           case TWO -> 2;
           case THREE_FOUR -> extFlag ? 4 : 3;
         };
-    int location = getActiveBlock().getAndAdd(size);
+    int location = getAndAdd(size);
+    tryAddSymbol(
+        instruction.getLabel(),
+        new SymbolData(location, getActiveBlock().getId(), SymbolData.Type.RELATIVE));
     appendOutputData(new PassOneData(instruction, size, getActiveBlockId(), location, true));
   }
 
@@ -158,7 +161,10 @@ public class PassOne {
       throw new AssemblerException("Size argument for RESW directive cannot be negative");
     }
     int size = count * WORD_SIZE;
-    int location = getActiveBlock().getAndAdd(size);
+    int location = getAndAdd(size);
+    tryAddSymbol(
+        directive.getLabel(),
+        new SymbolData(location, getActiveBlock().getId(), SymbolData.Type.RELATIVE));
     appendOutputData(new PassOneData(directive, size, getActiveBlock().getId(), location, false));
   }
 
@@ -170,18 +176,27 @@ public class PassOne {
     if (size < 0) {
       throw new AssemblerException("Size argument for RESB directive cannot be negative");
     }
-    int location = getActiveBlock().getAndAdd(size);
+    int location = getAndAdd(size);
+    tryAddSymbol(
+        directive.getLabel(),
+        new SymbolData(location, getActiveBlock().getId(), SymbolData.Type.RELATIVE));
     appendOutputData(new PassOneData(directive, size, getActiveBlockId(), location, false));
   }
 
   private void handleWORD(SourceLine directive) {
-    int location = getActiveBlock().getAndAdd(WORD_SIZE);
+    int location = getAndAdd(WORD_SIZE);
+    tryAddSymbol(
+        directive.getLabel(),
+        new SymbolData(location, getActiveBlock().getId(), SymbolData.Type.RELATIVE));
     appendOutputData(new PassOneData(directive, WORD_SIZE, getActiveBlockId(), location, false));
   }
 
   private void handleBYTE(SourceLine directive) {
     var size = ConstantParser.parseByteConstant(directive.getArgOne()).length * BYTE_SIZE;
-    int location = getActiveBlock().getAndAdd(size);
+    int location = getAndAdd(size);
+    tryAddSymbol(
+        directive.getLabel(),
+        new SymbolData(location, getActiveBlock().getId(), SymbolData.Type.RELATIVE));
     appendOutputData(new PassOneData(directive, size, getActiveBlockId(), location, false));
   }
 
@@ -192,11 +207,34 @@ public class PassOne {
   }
 
   private void handleEQU(SourceLine directive) {
-    System.out.println("EQU not implemented yet");
+    if (directive.getArgOne().isBlank()) {
+      throw new AssemblerException("Missing value for EQU directive.");
+    }
+    SymbolData data;
+    if (directive.getArgOne().equals("*")) {
+      data =
+          new SymbolData(
+              getActiveBlock().get(), getActiveBlock().getId(), SymbolData.Type.RELATIVE);
+    } else {
+      ExpressionParser parser = new ExpressionParser(symbolTable);
+      data = parser.parse(directive.getArgOne());
+    }
+    tryAddSymbol(directive.getLabel(), data);
+    appendOutputData(new PassOneData(directive, 0, data.programBlockId(), data.value(), false));
   }
 
   private void handleLTORG(SourceLine directive) {
     System.out.println("LTORG not implemented yet");
+  }
+
+  /**
+   * Adds count to the counter for the active block, and returns the previously stored value.
+   *
+   * @param count Count to add to counter for the active block
+   * @return Counter value before adding count
+   */
+  private int getAndAdd(int count) {
+    return getActiveBlock().getAndAdd(count);
   }
 
   /**
@@ -205,9 +243,6 @@ public class PassOne {
    */
   private void appendOutputData(PassOneData data) {
     output.add(data);
-    if (!data.line().getLabel().isBlank()) {
-      tryAddSymbol(data.line().getLabel(), data.block(), data.addressInBlock());
-    }
   }
 
   /**
@@ -215,14 +250,14 @@ public class PassOne {
    * exists in the symbol table, an error is thrown.
    *
    * @param label The label to add
-   * @param location The location of the symbol in the current program block
+   * @param symbolData The symbol data
    */
-  private void tryAddSymbol(String label, int blockID, int location) {
+  private void tryAddSymbol(String label, SymbolData symbolData) {
     if (!label.isEmpty()) {
       if (symbolTable.containsKey(label)) {
         throw new AssemblerException("Multiple definitions of symbol: " + label);
       }
-      symbolTable.put(label, new SymbolData(location, blockID, SymbolData.Type.RELATIVE));
+      symbolTable.put(label, symbolData);
     }
   }
 
