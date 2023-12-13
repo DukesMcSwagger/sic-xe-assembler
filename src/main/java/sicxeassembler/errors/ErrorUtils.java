@@ -1,4 +1,4 @@
-package sicxeassembler;
+package sicxeassembler.errors;
 
 import java.text.ParseException;
 

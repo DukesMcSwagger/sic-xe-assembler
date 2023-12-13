@@ -1,4 +1,4 @@
-package sicxeassembler;
+package sicxeassembler.errors;
 
 public class AssemblerException extends RuntimeException {
   private String causeLine;

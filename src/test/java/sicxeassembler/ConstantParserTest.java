@@ -3,6 +3,7 @@ package sicxeassembler;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
+import sicxeassembler.errors.AssemblerException;
 
 public class ConstantParserTest {
   @Test

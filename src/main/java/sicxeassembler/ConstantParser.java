@@ -1,6 +1,7 @@
 package sicxeassembler;
 
 import java.util.HashMap;
+import sicxeassembler.errors.AssemblerException;
 
 public class ConstantParser {
 

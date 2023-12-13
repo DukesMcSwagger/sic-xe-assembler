@@ -1,6 +1,7 @@
 package sicxeassembler;
 
 import java.util.*;
+import sicxeassembler.errors.AssemblerException;
 
 public class PassOne {
   private final List<SourceLine> lines;
@@ -221,7 +222,7 @@ public class PassOne {
       if (symbolTable.containsKey(label)) {
         throw new AssemblerException("Multiple definitions of symbol: " + label);
       }
-      symbolTable.put(label, new SymbolData(location, blockID));
+      symbolTable.put(label, new SymbolData(location, blockID, SymbolData.Type.RELATIVE));
     }
   }
 
