@@ -17,7 +17,7 @@ public class SourceLine {
   private static final Set<Character> OPCODE_PREFIXES = Set.of('+');
   private static final Set<Character> ARG_PREFIXES = Set.of('=', '#', '@');
 
-  public SourceLine() throws ParseException {}
+  public SourceLine() {}
 
   public static SourceLine parseLine(String source) throws ParseException {
     SourceLine line = new SourceLine();

@@ -8,6 +8,7 @@ public class PassOne {
   private final List<PassOneData> output = new LinkedList<>();
   private final ProgramBlockTable programBlocks = new ProgramBlockTable();
   private final Map<String, SymbolData> symbolTable = new LinkedHashMap<>();
+  private final Map<String, Literal> literalTable = new LinkedHashMap<>();
   private final OpTable opTable;
 
   /** The active program block. Initialized to default. */
@@ -73,6 +74,7 @@ public class PassOne {
       }
       getNextLine();
     }
+    outputPendingLiterals();
   }
 
   private boolean finished() {
@@ -118,6 +120,9 @@ public class PassOne {
   }
 
   private void handleInstruction(SourceLine instruction) {
+    if (instruction.getArgOnePrefix().equals("=")) {
+      handleLiteral(instruction);
+    }
     boolean extFlag = getInstructionExtFlag(instruction);
     int size =
         switch (opTable.get(instruction.getOpCode()).format()) {
@@ -150,6 +155,12 @@ public class PassOne {
       }
     }
     return extFlag;
+  }
+
+  private void handleLiteral(SourceLine literalInstruction) {
+    literalTable.computeIfAbsent(
+        literalInstruction.getArgOne(),
+        (literal) -> new Literal(ConstantParser.parseByteConstant(literal)));
   }
 
   private void handleRESW(SourceLine directive) {
@@ -224,7 +235,29 @@ public class PassOne {
   }
 
   private void handleLTORG(SourceLine directive) {
-    System.out.println("LTORG not implemented yet");
+    appendOutputData(
+        new PassOneData(directive, 0, getActiveBlock().getId(), getActiveBlock().get(), false));
+    outputPendingLiterals();
+  }
+
+  private void outputPendingLiterals() {
+    literalTable.forEach(
+        (name, literal) -> {
+          // if it is not assigned an address, assign it
+          if (literal.getAddress() == -1) {
+            int location = getAndAdd(literal.getSize());
+            literal.setBlock(getActiveBlock().getId());
+            literal.setAddress(location);
+            // Output so pass 2 can generate the data
+            appendOutputData(
+                new PassOneData(
+                    new SourceLine().setLabel("*").setOpCodePrefix("=").setOpCode(name),
+                    literal.getSize(),
+                    literal.getBlock(),
+                    literal.getAddress(),
+                    false));
+          }
+        });
   }
 
   /**
@@ -237,10 +270,7 @@ public class PassOne {
     return getActiveBlock().getAndAdd(count);
   }
 
-  /**
-   * Adds the data from the output. If the data has an associated symbol, adds the label to the
-   * symbol table via {@link #tryAddSymbol(String, int, int)}
-   */
+  /** Adds the data to the output. */
   private void appendOutputData(PassOneData data) {
     output.add(data);
   }
